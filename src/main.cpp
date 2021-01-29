@@ -314,22 +314,34 @@ std::vector<unsigned char> ParseHex(const std::string &str) {
 
 int main() {
 
-    std::string temp ("fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542");
-    std::vector<unsigned char> seed(temp.begin(),temp.end());
+    std::string seed = "000102030405060708090a0b0c0d0e0f";
+    static const std::vector<unsigned char> hashkey = { 'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd' };
+    auto vseed = ParseHex(seed);
 
-    std::vector<unsigned char> hashkey = {'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'};
 
     /** Pass the out seed to hmac512 to master key **/
+
     std::vector<uint8_t> outseed(64);
-    hmac_sha512(seed.data(), seed.size(), hashkey.data(), hashkey.size(), &outseed[0]);
-    std::vector<unsigned char> privateKey(32),chainCode(32);
+    hmac_sha512(hashkey.data(), hashkey.size(), vseed.data(), vseed.size(), &outseed[0]);
+    std::vector<unsigned char> privateKey(33),chainCode(32);
     privateKey.assign(outseed.begin(),outseed.begin() + 32);
     chainCode.assign(outseed.begin()+32,outseed.end());
+//    privateKey.insert(privateKey.begin(),0x00);
+    std::cout << "private Key : ";
+    for (const auto &itr : Secp256K1::getInstance()->base16Encode({privateKey.begin(),privateKey.end()})) {
+        std::cout << itr;
+    }
+    std::cout << "\n";
 
+    std::cout << "chaincode : ";
+    for (const auto &itr : Secp256K1::getInstance()->base16Encode({chainCode.begin(),chainCode.end()})) {
+        std::cout << itr;
+    }
+    std::cout << "\n";
     /** Pass this Private key to ecdsa **/
     Secp256K1::getInstance()->createPublicKeyFromPriv(privateKey);
 
-
+    std::cout << "public Key : ";
     for (const auto &itr : Secp256K1::getInstance()->base16Encode({Secp256K1::getInstance()->pubKey.begin(),Secp256K1::getInstance()->pubKey.end()})) {
         std::cout << itr;
     }
