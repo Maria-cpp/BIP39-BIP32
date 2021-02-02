@@ -223,21 +223,29 @@ ExtendedKey ExtendedKey::derivePath(const std::string &path) {
 /**wallet Import Format**/
 
 std::string ExtendedKey::wif(bytes_t extkey) {
+
+
     bytes_t wifkey;
+    /**  Add a 0x80 byte in front of it for mainnet addresses**/
     wifkey.insert(wifkey.end(), 0x80);
-    wifkey.insert(wifkey.end(), extkey.begin(), extkey.end());
+    wifkey.insert(wifkey.end(), extkey.begin()+1, extkey.end());
 
-    std::vector<uint8_t> final(32);
-    sha256_Raw(wifkey.data(), wifkey.size(), &final[0]);
-    bytes_t temp = final;
-    sha256_Raw(temp.data(), temp.size(), &final[0]);
+    /**  Add a 0x01 byte at the end if the private key will correspond to a compressed public key**/
+    wifkey.insert(wifkey.end(), 0x01);
 
-    std::string checksum(final.begin(), final.begin() + 8);
-    wifkey.insert(wifkey.end(), checksum.begin(), checksum.end());
+    std::cout << "WIF key in hex";
+    for (const auto &itr : Secp256K1::getInstance()->base16Encode({wifkey.begin(), wifkey.end()})) {
+        std::cout << itr;
+    }
+    std::cout << "\n";
+
+
     std::vector<char> key(64);
 
     bool suc = base58_encode_check(wifkey.data(), wifkey.size(), &key[0], key.size());
+
+    std::cout << "WIF key after base58 encoding : ";
     std::string pubb58{key.begin(), key.end()};
-    std::cout<<"\nWIF: " << pubb58 << "\n";
+    std::cout<< pubb58 << "\n";
     return pubb58;
 }

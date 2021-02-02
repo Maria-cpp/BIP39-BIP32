@@ -316,6 +316,7 @@ std::vector<unsigned char> ParseHex(const std::string &str) {
 
 int main() {
 
+
     std::string seed = "000102030405060708090a0b0c0d0e0f";
     static const std::vector<unsigned char> hashkey = {'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'};
     auto vseed = ParseHex(seed);
@@ -330,22 +331,26 @@ int main() {
     std::vector<char> prvkey(128);
     std::vector<char> pubkey(128);
 
+    /** Wallet Import Format**/
+    std::cout << "\n\t\tWIF \n";
+    std::string wif=pk->wif(pk->privateKey());
+
+
+    /** private key B58 and Hex **/
+    std::cout << "\n\t\tXPRV & XPUB \n";
+
+    bool suc = base58_encode_check(prvser.data(), prvser.size(), &prvkey[0], prvkey.size());
+    std::string prvb58{prvkey.begin(), prvkey.end()};
+    std::cout << "Ser Prv B58: " << suc << " " << prvb58 << std::endl;
+    std::cout << "Ser Prv hex : " << HexStr(prvser.begin(), prvser.end()) << std::endl;
+
 
     /** public key B58 and Hex **/
-    bool suc = base58_encode_check(pubser.data(), pubser.size(), &pubkey[0], pubkey.size());
+    suc = base58_encode_check(pubser.data(), pubser.size(), &pubkey[0], pubkey.size());
     std::string pubb58{pubkey.begin(), pubkey.end()};
     std::cout << "Ser pub B58: " << suc << " " << pubb58 << std::endl;
     std::cout << "Ser pub hex : " << HexStr(pubser.begin(), pubser.end()) << std::endl;
 
-    /** Wallet Import Format**/
-    ///Error in WIF
-    std::string wif=pk->wif(pk->privateKey());
-
-    /** private key B58 and Hex **/
-     suc = base58_encode_check(prvser.data(), prvser.size(), &prvkey[0], prvkey.size());
-    std::string prvb58{prvkey.begin(), prvkey.end()};
-    std::cout << "Ser Prv B58: " << suc << " " << prvb58 << std::endl;
-    std::cout << "Ser Prv hex : " << HexStr(prvser.begin(), prvser.end()) << std::endl;
 
     std::cout << "-------------------------------" << std::endl;
 
@@ -361,7 +366,7 @@ int main() {
             1000000000
     };
     ExtendedKey par = *pk;
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 5; ++i) {
         std::cout << "\n New child: \n";
         ck = par.derive(arr[i]);
         prvser = ck.serializedKey(0x488ade4);
