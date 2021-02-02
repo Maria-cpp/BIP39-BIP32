@@ -1,0 +1,243 @@
+#include "extendedkey.h"
+#include "crypto/hmac.h"
+#include "crypto/ripemd160.h"
+#include "secp256k1-cxx/secp256k1-cxx.hpp"
+#include <array>
+#include <assert.h>
+#include <iostream>
+
+ExtendedKey::ExtendedKey(const bytes_t &key, bytes_t chainCode, uint32_t childNum, uint32_t parentFP,
+                         unsigned char depth)
+        : m_key{key}, m_chainCode{std::move(chainCode)}, m_parentFingerprint{parentFP}, m_childNum{childNum},
+          m_depth{depth} {
+    if (m_chainCode.size() != 32) {
+        throw std::runtime_error("Invalid chain code, len: " + std::to_string(m_chainCode.size()));
+    }
+
+    std::cout << "private Key : ";
+    for (const auto &itr : Secp256K1::getInstance()->base16Encode({key.begin(), key.end()})) {
+        std::cout << itr;
+    }
+    std::cout << "\n";
+
+    std::cout << "chaincode : ";
+    for (const auto &itr : Secp256K1::getInstance()->base16Encode({m_chainCode.begin(), m_chainCode.end()})) {
+        std::cout << itr;
+    }
+    std::cout << "\n";
+
+
+    // key is private -- 32
+    if (key.size() == 32) {
+        //TODO: check for size AND zeroness here
+        m_key.insert(m_key.begin(), 0x00);
+    }
+
+    //key is public -- 33
+    if (key.size() == 33) {
+        try {
+        } catch (const std::runtime_error &e) {
+            throw e;
+        }
+    }
+    if (isPrivate()) {
+        Secp256K1::getInstance()->createPublicKeyFromPriv(key);
+        //compressed form
+        m_publicKey = Secp256K1::getInstance()->publicKey();
+    } else {
+        m_publicKey = m_key;
+    }
+    std::cout << "public key : ";
+    for (const auto &itr : Secp256K1::getInstance()->base16Encode({m_publicKey.begin(), m_publicKey.end()})) {
+        std::cout << itr;
+    }
+    std::cout << "\n";
+
+    m_valid = true;
+}
+
+unsigned char ExtendedKey::depth() const {
+    return m_depth;
+}
+
+bytes_t ExtendedKey::privateKey() const {
+    return m_key;
+}
+
+bytes_t ExtendedKey::chainCode() const {
+    return m_chainCode;
+}
+
+bytes_t ExtendedKey::publicKey() const {
+    return m_publicKey;
+}
+
+uint32_t ExtendedKey::fp() const {
+    std::vector<uint8_t> final(32);
+    sha256_Raw(m_publicKey.data(), m_publicKey.size(), &final[0]);
+    //    std::vector<uint8_t> final(20);
+    ripemd160(final.data(), final.size(), &final[0]);
+    return ((uint32_t) final[0] << 24) | ((uint32_t) final[1] << 16) | ((uint32_t) final[2] << 8) |
+           ((uint32_t) final[3]);
+}
+
+bytes_t ExtendedKey::serializedKey(uint32_t version) const {
+    bytes_t extkey;
+    extkey.reserve(78);
+
+    //version
+    extkey.push_back((uint32_t) version >> 24);
+    extkey.push_back(((uint32_t) version >> 16) & 0xff);
+    extkey.push_back(((uint32_t) version >> 8) & 0xff);
+    extkey.push_back((uint32_t) version & 0xff);
+    //depth
+    extkey.push_back(m_depth);
+    //fingerprint
+    auto fp = m_depth == 0 ? 0 : m_parentFingerprint;
+    extkey.push_back((uint32_t) fp >> 24);
+    extkey.push_back(((uint32_t) fp >> 16) & 0xff);
+    extkey.push_back(((uint32_t) fp >> 8) & 0xff);
+    extkey.push_back((uint32_t) fp & 0xff);
+
+    //childnum
+    extkey.push_back((uint32_t) m_childNum >> 24);
+    extkey.push_back(((uint32_t) m_childNum >> 16) & 0xff);
+    extkey.push_back(((uint32_t) m_childNum >> 8) & 0xff);
+    extkey.push_back((uint32_t) m_childNum & 0xff);
+
+    //chaincode
+    extkey.insert(extkey.end(), m_chainCode.begin(), m_chainCode.end());
+
+    //key
+    uint32_t val = XPRV;
+    if (version == val) {
+        if (m_key.size() == 32)
+            extkey.emplace_back(0x00);
+
+        extkey.insert(extkey.end(), m_key.begin(), m_key.end());
+    }
+
+
+    val = XPUB;
+
+    if (version == val) {
+        extkey.insert(extkey.end(), m_publicKey.begin(), m_publicKey.end());
+    }
+
+    assert(extkey.size() == 78);
+
+    return extkey;
+}
+
+ExtendedKey ExtendedKey::derive(uint32_t i) {
+    if (!m_valid) {
+        throw std::runtime_error("Invalid extended key, cannot derive");
+    }
+    bool privDerivation = 0x80000000 & i;
+    if (!isPrivate() && privDerivation) {
+        throw std::runtime_error("Cannot do private key derivation on public key.");
+    }
+
+    ExtendedKey child;
+    child.m_valid = false;
+
+    bytes_t data;
+    data = privDerivation ? m_key : m_publicKey;
+
+    data.push_back(i >> 24);
+    data.push_back((i >> 16) & 0xff);
+    data.push_back((i >> 8) & 0xff);
+    data.push_back(i & 0xff);
+
+    bytes_t hash;
+    hash.resize(64);
+    hmac_sha512(m_chainCode.data(), m_chainCode.size(), data.data(), data.size(), &hash[0]);
+    assert(hash.size() == 64);
+
+    bytes_t childKey(m_key.begin() + 1, m_key.end());
+    bytes_t childChainCode(hash.begin() + 32, hash.end());
+    bytes_t lL(hash.begin(), hash.begin() + 32);
+
+    assert(childKey.size() == 32);
+    assert(childChainCode.size() == 32);
+
+    bool ret = Secp256K1::getInstance()->privKeyTweakAdd(childKey, lL);
+    if (ret) {
+        m_parentFingerprint = Secp256K1::getInstance()->fingerprint();
+        child = ExtendedKey(childKey, childChainCode, i, m_parentFingerprint, m_depth + 1);
+    }
+
+    return child;
+}
+
+ExtendedKey ExtendedKey::derivePath(const std::string &path) {
+    if (path.empty())
+        throw std::runtime_error("Invalid derive path: empty");
+
+    std::vector<uint32_t> path_vector;
+
+    size_t i = 0;
+    uint64_t n = 0;
+    while (i < path.size()) {
+        char c = path[i];
+        if (c == 'm') {
+            i++;
+            continue;
+        }
+        if (c >= '0' && c <= '9') {
+            n *= 10;
+            n += (uint32_t) (c - '0');
+            if (n >= 0x80000000)
+                throw std::runtime_error("Invalid size in derive path");
+            i++;
+            if (i >= path.size()) {
+                path_vector.push_back((uint32_t) n);
+            }
+        } else if (c == '\'') {
+            if (i + 1 < path.size()) {
+                if ((i + 2 >= path.size()) || (path[i + 1] != '/') || (path[i + 2] < '0') || (path[i + 2] > '9'))
+                    throw std::runtime_error("Invalid size in derive path");
+            }
+            n |= 0x80000000;
+            path_vector.push_back((uint32_t) n);
+            n = 0;
+            i += 2;
+        } else if (c == '/') {
+            if (i + 1 >= path.size() || path[i + 1] < '0' || path[i + 1] > '9')
+                throw std::runtime_error("invalid derive path");
+            path_vector.push_back((uint32_t) n);
+            n = 0;
+            i++;
+        } else {
+            throw std::runtime_error("invalid derive path");
+        }
+    }
+
+    ExtendedKey child(*this);
+    for (auto n : path_vector) {
+        child = child.derive(n);
+    }
+    return child;
+}
+
+/**wallet Import Format**/
+
+std::string ExtendedKey::wif(bytes_t extkey) {
+    bytes_t wifkey;
+    wifkey.insert(wifkey.end(), 0x80);
+    wifkey.insert(wifkey.end(), extkey.begin(), extkey.end());
+
+    std::vector<uint8_t> final(32);
+    sha256_Raw(wifkey.data(), wifkey.size(), &final[0]);
+    bytes_t temp = final;
+    sha256_Raw(temp.data(), temp.size(), &final[0]);
+
+    std::string checksum(final.begin(), final.begin() + 8);
+    wifkey.insert(wifkey.end(), checksum.begin(), checksum.end());
+    std::vector<char> key(64);
+
+    bool suc = base58_encode_check(wifkey.data(), wifkey.size(), &key[0], key.size());
+    std::string pubb58{key.begin(), key.end()};
+    std::cout<<"\nWIF: " << pubb58 << "\n";
+    return pubb58;
+}

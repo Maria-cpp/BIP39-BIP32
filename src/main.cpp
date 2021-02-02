@@ -6,6 +6,8 @@
 #include <vector>
 #include "crypto/hmac.h"
 #include "secp256k1-cxx.hpp"
+#include "masterkey.h"
+#include "crypto/base58.h"
 
 constexpr inline bool IsSpace(char c) noexcept {
     return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
@@ -315,38 +317,66 @@ std::vector<unsigned char> ParseHex(const std::string &str) {
 int main() {
 
     std::string seed = "000102030405060708090a0b0c0d0e0f";
-    static const std::vector<unsigned char> hashkey = { 'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd' };
+    static const std::vector<unsigned char> hashkey = {'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'};
     auto vseed = ParseHex(seed);
-
-
     /** Pass the out seed to hmac512 to master key **/
-
     std::vector<uint8_t> outseed(64);
     hmac_sha512(hashkey.data(), hashkey.size(), vseed.data(), vseed.size(), &outseed[0]);
-    std::vector<unsigned char> privateKey(33),chainCode(32);
-    privateKey.assign(outseed.begin(),outseed.begin() + 32);
-    chainCode.assign(outseed.begin()+32,outseed.end());
-//    privateKey.insert(privateKey.begin(),0x00);
-    std::cout << "private Key : ";
-    for (const auto &itr : Secp256K1::getInstance()->base16Encode({privateKey.begin(),privateKey.end()})) {
-        std::cout << itr;
+    MasterKey k(outseed);
+    auto pk = k.getMaster();
+
+    auto prvser = pk->serializedKey(0x0488ade4);
+    auto pubser=pk->serializedKey(0x0488b21e);
+    std::vector<char> prvkey(128);
+    std::vector<char> pubkey(128);
+
+
+    /** public key B58 and Hex **/
+    bool suc = base58_encode_check(pubser.data(), pubser.size(), &pubkey[0], pubkey.size());
+    std::string pubb58{pubkey.begin(), pubkey.end()};
+    std::cout << "Ser pub B58: " << suc << " " << pubb58 << std::endl;
+    std::cout << "Ser pub hex : " << HexStr(pubser.begin(), pubser.end()) << std::endl;
+
+    /** Wallet Import Format**/
+    ///Error in WIF
+    std::string wif=pk->wif(pk->privateKey());
+
+    /** private key B58 and Hex **/
+     suc = base58_encode_check(prvser.data(), prvser.size(), &prvkey[0], prvkey.size());
+    std::string prvb58{prvkey.begin(), prvkey.end()};
+    std::cout << "Ser Prv B58: " << suc << " " << prvb58 << std::endl;
+    std::cout << "Ser Prv hex : " << HexStr(prvser.begin(), prvser.end()) << std::endl;
+
+    std::cout << "-------------------------------" << std::endl;
+
+
+    /** Extended key derivation**/
+
+    ExtendedKey ck;
+    uint32_t arr[5] = {
+            0x80000000,
+            1,
+            0x80000002,
+            2,
+            1000000000
+    };
+    ExtendedKey par = *pk;
+    for (int i = 0; i < 2; ++i) {
+        std::cout << "\n New child: \n";
+        ck = par.derive(arr[i]);
+        prvser = ck.serializedKey(0x488ade4);
+        pubser=ck.serializedKey(0x0488b21e);
+        std::vector<char> cKey(128);
+        std::vector<char> pKey(128);
+
+        base58_encode_check(prvser.data(), prvser.size(), &cKey[0], cKey.size());
+        base58_encode_check(pubser.data(), pubser.size(), &pKey[0], pKey.size());
+        std::cout << "-----------------------------------------------\n";
+        std::cout << "CK PRVKey in B58 : " << std::string{cKey.begin(), cKey.end()} << std::endl;
+        std::cout << "Ser PRVKey in hex: " << HexStr(prvser.begin(), prvser.end()) << std::endl;
+        std::cout << "CK pubKey in B58 : " << std::string{pKey.begin(), pKey.end()} << std::endl;
+        std::cout << "Ser pubKey in hex: " << HexStr(pubser.begin(), pubser.end()) << std::endl;
+        par = ck;
     }
-    std::cout << "\n";
-
-    std::cout << "chaincode : ";
-    for (const auto &itr : Secp256K1::getInstance()->base16Encode({chainCode.begin(),chainCode.end()})) {
-        std::cout << itr;
-    }
-    std::cout << "\n";
-    /** Pass this Private key to ecdsa **/
-    Secp256K1::getInstance()->createPublicKeyFromPriv(privateKey);
-
-    std::cout << "public Key : ";
-    for (const auto &itr : Secp256K1::getInstance()->base16Encode({Secp256K1::getInstance()->pubKey.begin(),Secp256K1::getInstance()->pubKey.end()})) {
-        std::cout << itr;
-    }
-    std::cout << "\n";
-
-
     return 0;
 }
