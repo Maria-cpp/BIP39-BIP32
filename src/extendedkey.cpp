@@ -233,19 +233,26 @@ std::string ExtendedKey::wif(bytes_t extkey) {
     /**  Add a 0x01 byte at the end if the private key will correspond to a compressed public key**/
     wifkey.insert(wifkey.end(), 0x01);
 
-    std::cout << "WIF key in hex";
-    for (const auto &itr : Secp256K1::getInstance()->base16Encode({wifkey.begin(), wifkey.end()})) {
-        std::cout << itr;
-    }
-    std::cout << "\n";
-
-
     std::vector<char> key(64);
 
-    bool suc = base58_encode_check(wifkey.data(), wifkey.size(), &key[0], key.size());
+    base58_encode_check(wifkey.data(), wifkey.size(), &key[0], key.size());
 
-    std::cout << "WIF key after base58 encoding : ";
+    std::cout << "Private Key to WIF: ";
     std::string pubb58{key.begin(), key.end()};
     std::cout<< pubb58 << "\n";
     return pubb58;
+}
+
+std::string ExtendedKey::wifTokey(std::string wif) {
+    unsigned char key[34];
+    uint8_t *ptr= reinterpret_cast<uint8_t *>(key);
+    base58_decode_check(wif.c_str(), ptr, wif.length());
+    std::string decodedkey;
+
+    for (const auto &itr : Secp256K1::getInstance()->base16Encode({std::begin(key), std::end(key)})){
+        decodedkey+=itr;
+    }
+    decodedkey=decodedkey.substr(2, decodedkey.length()-4);
+    std::cout << "\nWIF to Private key : "<<decodedkey<<"\n";
+    return decodedkey;
 }

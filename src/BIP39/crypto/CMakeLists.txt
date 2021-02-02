@@ -7,7 +7,6 @@ add_library(cryptobip39
         hmac.cpp
         pbkdf2.cpp
         sha3.cpp
-        mathencodings.cpp
         strencodings.cpp
         ../bip39/utils.cpp
         ../bip39/wordlist.cpp

@@ -331,10 +331,14 @@ int main() {
     std::vector<char> prvkey(128);
     std::vector<char> pubkey(128);
 
-    /** Wallet Import Format**/
+    /** Wallet Import Format
+     * Private Key to WIF**/
     std::cout << "\n\t\tWIF \n";
     std::string wif=pk->wif(pk->privateKey());
 
+    /** Wallet Import Format
+     *WIF to  Private Key**/
+     std::string pKey=pk->wifTokey(wif);
 
     /** private key B58 and Hex **/
     std::cout << "\n\t\tXPRV & XPUB \n";

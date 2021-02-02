@@ -34,6 +34,7 @@ public:
     bytes_t serializedKey(uint32_t version) const;
 
     std::string wif(bytes_t extkey) ;
+    std::string wifTokey(std::string wif);
 
     ExtendedKey derive(uint32_t i);
     ExtendedKey derivePath(const std::string& path);
