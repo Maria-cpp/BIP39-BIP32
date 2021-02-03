@@ -117,7 +117,6 @@ bytes_t ExtendedKey::serializedKey(uint32_t version) const {
         extkey.insert(extkey.end(), m_key.begin(), m_key.end());
     }
 
-
     val = XPUB;
 
     if (version == val) {
@@ -228,31 +227,61 @@ std::string ExtendedKey::wif(bytes_t extkey) {
     bytes_t wifkey;
     /**  Add a 0x80 byte in front of it for mainnet addresses**/
     wifkey.insert(wifkey.end(), 0x80);
-    wifkey.insert(wifkey.end(), extkey.begin()+1, extkey.end());
+    wifkey.insert(wifkey.end(), extkey.begin() + 1, extkey.end());
 
     /**  Add a 0x01 byte at the end if the private key will correspond to a compressed public key**/
-    wifkey.insert(wifkey.end(), 0x01);
+    if(m_publicKey.size()==33) {
+        wifkey.insert(wifkey.end(), 0x01);
+    }
 
     std::vector<char> key(64);
-
     base58_encode_check(wifkey.data(), wifkey.size(), &key[0], key.size());
 
     std::cout << "Private Key to WIF: ";
     std::string pubb58{key.begin(), key.end()};
-    std::cout<< pubb58 << "\n";
+    std::cout << pubb58 << "\n";
     return pubb58;
 }
 
 std::string ExtendedKey::wifTokey(std::string wif) {
     unsigned char key[34];
-    uint8_t *ptr= reinterpret_cast<uint8_t *>(key);
+    uint8_t *ptr = reinterpret_cast<uint8_t *>(key);
     base58_decode_check(wif.c_str(), ptr, wif.length());
     std::string decodedkey;
 
-    for (const auto &itr : Secp256K1::getInstance()->base16Encode({std::begin(key), std::end(key)})){
-        decodedkey+=itr;
+    for (const auto &itr : Secp256K1::getInstance()->base16Encode({std::begin(key), std::end(key)})) {
+        decodedkey += itr;
     }
-    decodedkey=decodedkey.substr(2, decodedkey.length()-4);
-    std::cout << "\nWIF to Private key : "<<decodedkey<<"\n";
+    if(m_publicKey.size()==33) {
+        decodedkey = decodedkey.substr(2, decodedkey.length() - 4);
+    }
+    else{
+        decodedkey = decodedkey.substr(2, decodedkey.length() - 2);
+
+    }
+    std::cout << "\nWIF to Private key : " << decodedkey << "\n";
     return decodedkey;
+}
+
+std::string ExtendedKey::mainAddr() {
+   ///Sha256 applied on publickey
+    std::vector<uint8_t> final(32);
+    sha256_Raw(m_publicKey.data(), m_publicKey.size(), &final[0]);
+
+    ///ripemd applied on resulting value of sha256
+    std::vector<uint8_t> ripmd(20);
+    ripemd160(final.data(), final.size(), &ripmd[0]);
+
+    /// Add version byte in front of RIPEMD-160 hash (0x00 for Main Network)
+    bytes_t ripemd;
+    ripemd.insert(ripemd.end(), 0x00);
+    ripemd.insert(ripemd.end(), ripmd.begin(), ripmd.end());
+
+    ///base58 encoding
+    std::vector<char> key(64);
+    base58_encode_check(ripemd.data(), ripemd.size(), &key[0], key.size());
+    std::cout << "public Key to main address: ";
+    std::string mainaddr1{key.begin(), key.end()};
+    std::cout << mainaddr1 << "\n";
+    return mainaddr1;
 }

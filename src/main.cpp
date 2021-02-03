@@ -331,6 +331,9 @@ int main() {
     std::vector<char> prvkey(128);
     std::vector<char> pubkey(128);
 
+    /** Main Address **/
+    std::string addr=pk->mainAddr();
+
     /** Wallet Import Format
      * Private Key to WIF**/
     std::cout << "\n\t\tWIF \n";

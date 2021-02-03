@@ -7,16 +7,18 @@
 #include <vector>
 #include "crypto/base58.h"
 #include "secp256k1-cxx.hpp"
+
 #define XPRV 0x0488ade4;
 #define XPUB 0x0488b21e;
 
 typedef std::vector<uint8_t> bytes_t;
 
-class ExtendedKey
-{
+class ExtendedKey {
 public:
     ExtendedKey() = default;
-    ExtendedKey(const bytes_t& key, bytes_t chainCode, uint32_t childNum = 0, uint32_t parentFP = 0, unsigned char depth = 0);
+
+    ExtendedKey(const bytes_t &key, bytes_t chainCode, uint32_t childNum = 0, uint32_t parentFP = 0,
+                unsigned char depth = 0);
 
     static constexpr int HARDENED_INDEX_BEGIN = 0x80000000;
     static constexpr int BITWISE_SEED_LENGTH = 512;
@@ -33,11 +35,15 @@ public:
 
     bytes_t serializedKey(uint32_t version) const;
 
-    std::string wif(bytes_t extkey) ;
+    ExtendedKey derive(uint32_t i);
+
+    ExtendedKey derivePath(const std::string &path);
+
+    std::string wif(bytes_t extkey);
+
     std::string wifTokey(std::string wif);
 
-    ExtendedKey derive(uint32_t i);
-    ExtendedKey derivePath(const std::string& path);
+    std::string mainAddr();
 
 private:
     bytes_t m_key; // 33 bytes, first is 0x00
