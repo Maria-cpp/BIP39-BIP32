@@ -163,7 +163,10 @@ ExtendedKey ExtendedKey::derive(uint32_t i) {
     bool ret = Secp256K1::getInstance()->privKeyTweakAdd(childKey, lL);
     if (ret) {
         m_parentFingerprint = Secp256K1::getInstance()->fingerprint();
+//        std::cout<<"\nParent : "<<m_parentFingerprint<<"\n";
         child = ExtendedKey(childKey, childChainCode, i, m_parentFingerprint, m_depth + 1);
+//        std::cout<<"\nDepth level : "<<std::to_string(m_depth)<<"\n";
+
     }
 
     return child;

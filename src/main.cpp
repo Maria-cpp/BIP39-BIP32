@@ -317,7 +317,7 @@ std::vector<unsigned char> ParseHex(const std::string &str) {
 int main() {
 
 
-    std::string seed = "000102030405060708090a0b0c0d0e0f";
+    std::string seed = "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542";
     static const std::vector<unsigned char> hashkey = {'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'};
     auto vseed = ParseHex(seed);
     /** Pass the out seed to hmac512 to master key **/
@@ -365,30 +365,32 @@ int main() {
     /** Extended key derivation**/
 
     ExtendedKey ck;
-    uint32_t arr[5] = {
-            0x80000000,
-            1,
-            0x80000002,
-            2,
-            1000000000
-    };
+//    uint32_t arr1[5] = {
+//            0x80000000,
+//            1,
+//            0x80000002,
+//            2,
+//            1000000000
+//    };
+    std::string arr = {"0/2147483647'/1/2147483646'/2"};
     ExtendedKey par = *pk;
-    for (int i = 0; i < 5; ++i) {
-        std::cout << "\n New child: \n";
-        ck = par.derive(arr[i]);
-        prvser = ck.serializedKey(0x488ade4);
-        pubser=ck.serializedKey(0x0488b21e);
-        std::vector<char> cKey(128);
-        std::vector<char> pKey(128);
 
-        base58_encode_check(prvser.data(), prvser.size(), &cKey[0], cKey.size());
-        base58_encode_check(pubser.data(), pubser.size(), &pKey[0], pKey.size());
-        std::cout << "-----------------------------------------------\n";
-        std::cout << "CK PRVKey in B58 : " << std::string{cKey.begin(), cKey.end()} << std::endl;
-        std::cout << "Ser PRVKey in hex: " << HexStr(prvser.begin(), prvser.end()) << std::endl;
-        std::cout << "CK pubKey in B58 : " << std::string{pKey.begin(), pKey.end()} << std::endl;
-        std::cout << "Ser pubKey in hex: " << HexStr(pubser.begin(), pubser.end()) << std::endl;
-        par = ck;
-    }
+//     for (int i = 0; i <=arr->size()-1; i++) {
+         std::cout << "\n New child: \n";
+         ck = par.derivePath(arr);
+         prvser = ck.serializedKey(0x488ade4);
+         pubser=ck.serializedKey(0x0488b21e);
+         std::vector<char> cKey(128);
+         std::vector<char> pubKey(128);
+
+         base58_encode_check(prvser.data(), prvser.size(), &cKey[0], cKey.size());
+         base58_encode_check(pubser.data(), pubser.size(), &pubKey[0], pubKey.size());
+         std::cout << "-----------------------------------------------\n";
+         std::cout << "CK PRVKey in B58 : " << std::string{cKey.begin(), cKey.end()} << std::endl;
+         std::cout << "Ser PRVKey in hex: " << HexStr(prvser.begin(), prvser.end()) << std::endl;
+         std::cout << "CK pubKey in B58 : " << std::string{pubKey.begin(), pubKey.end()} << std::endl;
+         std::cout << "Ser pubKey in hex: " << HexStr(pubser.begin(), pubser.end()) << std::endl;
+//         par = ck;
+//     }
     return 0;
 }
