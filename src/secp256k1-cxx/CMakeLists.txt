@@ -6,4 +6,4 @@ add_subdirectory(crypto)
 add_library(secp256k1-cxx secp256k1-cxx.cpp)
 
 target_link_libraries(secp256k1-cxx PRIVATE libsecp256k1)
-target_link_libraries(secp256k1-cxx PRIVATE crypto)
+target_link_libraries(secp256k1-cxx PRIVATE secpcrypto)

@@ -52,9 +52,9 @@ template <typename CTX, size_t BLOCK_LEN>
 void hmac_sha256_Final(HMAC_CTX<CTX, BLOCK_LEN>* hctx, uint8_t* hmac);
 
 void hmac_sha256(
-    const uint8_t* key, const size_t keylen, const uint8_t* msg, const size_t msglen, uint8_t* hmac);
+        const uint8_t* key, const size_t keylen, const uint8_t* msg, const size_t msglen, uint8_t* hmac);
 void hmac_sha256_prepare(
-    const uint8_t* key, const size_t keylen, uint32_t* opad_digest, uint32_t* ipad_digest);
+        const uint8_t* key, const size_t keylen, uint32_t* opad_digest, uint32_t* ipad_digest);
 
 template <typename CTX, size_t BLOCK_LEN>
 void hmac_sha512_Init(HMAC_CTX<CTX, BLOCK_LEN>* hctx, const uint8_t* key, const uint32_t keylen);
@@ -64,12 +64,12 @@ template <typename CTX, size_t BLOCK_LEN>
 void hmac_sha512_Final(HMAC_CTX<CTX, BLOCK_LEN>* hctx, uint8_t* hmac);
 
 void hmac_sha512(
-    const uint8_t* key, const size_t keylen, const uint8_t* msg, const size_t msglen, uint8_t* hmac);
+        const uint8_t* key, const size_t keylen, const uint8_t* msg, const size_t msglen, uint8_t* hmac);
 void hmac_sha512_prepare(
-    const uint8_t* key,
-    const size_t keylen,
-    std::array<uint64_t, 8>& opad_digest,
-    std::array<uint64_t, 8>& ipad_digest);
+        const uint8_t* key,
+        const size_t keylen,
+        std::array<uint64_t, 8>& opad_digest,
+        std::array<uint64_t, 8>& ipad_digest);
 
 template <typename T>
 std::vector<uint8_t> hashHmac(HMAC_ALGO algo, const T& key, const T& msg)
@@ -81,14 +81,14 @@ std::vector<uint8_t> hashHmac(HMAC_ALGO algo, const T& key, const T& msg)
 
     std::vector<uint8_t> outHmac;
     switch (algo) {
-    case HMAC_ALGO::Sha256:
-        outHmac.resize(SHA256_RAW_BYTES_LENGTH);
-        hmac_sha256(key.data(), key.size(), msg.data(), msg.size(), &outHmac[0]);
-        break;
-    case HMAC_ALGO::Sha512:
-        outHmac.resize(SHA512_RAW_BYTES_LENGTH);
-        hmac_sha512(key.data(), key.size(), msg.data(), msg.size(), &outHmac[0]);
-        break;
+        case HMAC_ALGO::Sha256:
+            outHmac.resize(SHA256_RAW_BYTES_LENGTH);
+            hmac_sha256(key.data(), key.size(), msg.data(), msg.size(), &outHmac[0]);
+            break;
+        case HMAC_ALGO::Sha512:
+            outHmac.resize(SHA512_RAW_BYTES_LENGTH);
+            hmac_sha512(key.data(), key.size(), msg.data(), msg.size(), &outHmac[0]);
+            break;
     }
     return outHmac;
 }

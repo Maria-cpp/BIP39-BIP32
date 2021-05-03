@@ -141,7 +141,7 @@ void pbkdf2_hmac_sha512_Init(
     blocknr = Reverse32(blocknr);
 #endif
 
-    hmac_sha512_prepare(pass, passlen, pctx->odig, pctx->idig);
+    hmac_sha512_prepare(pass, passlen, reinterpret_cast<std::array<uint64_t, 8> &>(pctx->odig), pctx->idig);
     memset(pctx->g.data(), 0, sizeof(pctx->g));
     pctx->g[8] = 0x8000000000000000;
     pctx->g[15] = (SHA512_BLOCK_LENGTH + SHA512_RAW_BYTES_LENGTH) * 8;

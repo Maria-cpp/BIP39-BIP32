@@ -4,7 +4,7 @@
 #include <vector>
 #include "extendedkey.h"
 #include "iostream"
-#include "secp256k1-cxx.hpp"
+#include "../secp256k1-cxx/secp256k1-cxx.hpp"
 
 class MasterKey
 {

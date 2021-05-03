@@ -34,8 +34,9 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include "secp256k1-cxx/crypto/sha2.hpp"
 
-static constexpr size_t SHA256_BLOCK_LENGTH = 64;
+//static constexpr size_t SHA256_BLOCK_LENGTH = 64;
 static constexpr size_t SHA256_RAW_BYTES_LENGTH = 32;
 static constexpr size_t SHA256_HEX_STRING_LENGTH = (SHA256_RAW_BYTES_LENGTH * 2 + 1);
 

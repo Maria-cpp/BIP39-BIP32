@@ -1,9 +1,6 @@
 #include "secp256k1-cxx.hpp"
-#include "crypto/ripemd160.h"
-#include "crypto/sha2.hpp"
 
 #include <cassert>
-#include <chrono>
 #include <cstring>
 #include <iostream>
 #include <random>
@@ -15,12 +12,15 @@
  * creates pub/priv key pair
  */
 Secp256K1::Secp256K1()
-        : ctx(secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY)) {
+        : ctx(secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY))
+{
 }
 
-Secp256K1::~Secp256K1() {
+Secp256K1::~Secp256K1()
+{
     secp256k1_context_destroy(ctx);
 }
+
 
 bool Secp256K1::createPrivateKey() {
     //get epoch time
@@ -45,11 +45,22 @@ bool Secp256K1::createPrivateKey() {
     return verifyKey();
 }
 
+void Secp256K1::setPrivKey(std::vector<uint8_t> priv)
+{
+    privKey = std::move(priv);
+}
+
+void Secp256K1::setPubkey(std::vector<uint8_t> pub)
+{
+    pubKey = std::move(pub);
+}
+
 /**
  * @brief verifies private key and generates corresponding public key
  * @param privateKey - in hexadecimal
  */
-bool Secp256K1::createPublicKeyFromPriv(const std::vector<uint8_t> &privateKey) {
+bool Secp256K1::createPublicKeyFromPriv(const std::vector<uint8_t>& privateKey)
+{
     privKey = privateKey;
     //verify priv key
     if (!verifyKey()) {
@@ -68,12 +79,14 @@ bool Secp256K1::createPublicKeyFromPriv(const std::vector<uint8_t> &privateKey) 
  * @param tweak
  * @return true | false
  */
-bool Secp256K1::privKeyTweakAdd(std::vector<uint8_t> &key, const std::vector<uint8_t> &tweak) {
+bool Secp256K1::privKeyTweakAdd(std::vector<uint8_t>& key, const std::vector<uint8_t>& tweak)
+{
     bool ret = secp256k1_ec_privkey_tweak_add(ctx, &key[0], tweak.data());
     return ret;
 }
 
-std::vector<uint8_t> Secp256K1::uncompressedPublicKey() {
+std::vector<uint8_t> Secp256K1::uncompressedPublicKey()
+{
     secp256k1_pubkey pubkey;
     assert(ctx && "secp256k1_context_verify must be initialized to use CPubKey.");
     if (!secp256k1_ec_pubkey_parse(ctx, &pubkey, &pubKey[0], pubKey.size())) {
@@ -85,11 +98,22 @@ std::vector<uint8_t> Secp256K1::uncompressedPublicKey() {
     return pub;
 }
 
-std::vector<uint8_t> Secp256K1::publicKey() const {
+std::vector<uint8_t> Secp256K1::uncompress(const std::vector<uint8_t>& pubkey)
+{
+    if (pubkey.empty())
+        throw Secp256K1Exception("Empty public key in Secp256K1::uncompress");
+    Secp256K1 s;
+    s.setPubkey(pubkey);
+    return s.uncompressedPublicKey();
+}
+
+std::vector<uint8_t> Secp256K1::publicKey() const
+{
     return pubKey;
 }
 
-std::vector<uint8_t> Secp256K1::privateKey() const {
+std::vector<uint8_t> Secp256K1::privateKey() const
+{
     return privKey;
 }
 
@@ -102,18 +126,20 @@ uint32_t Secp256K1::fingerprint() const {
 }
 
 std::string Secp256K1::publicKeyHex() const {
-    return base16Encode(reinterpret_cast<const char *>(pubKey.data()));
+    return BIP39_Utils::base16Encode(reinterpret_cast<const char *>(pubKey.data()));
 }
 
 std::string Secp256K1::privateKeyHex() const {
-    return base16Encode(reinterpret_cast<const char *>(privKey.data()));
+    return BIP39_Utils::base16Encode(reinterpret_cast<const char *>(privKey.data()));
 }
 
-bool Secp256K1::verifyKey() {
+bool Secp256K1::verifyKey()
+{
     return secp256k1_ec_seckey_verify(ctx, privKey.data());
 }
 
-bool Secp256K1::createPublicKey(bool compressed) {
+bool Secp256K1::createPublicKey(bool compressed)
+{
     // Calculate public key.
     secp256k1_pubkey pubkey;
     int ret = secp256k1_ec_pubkey_create(ctx, &pubkey, privKey.data());
@@ -122,25 +148,25 @@ bool Secp256K1::createPublicKey(bool compressed) {
     }
 
     // Serialize public key.
-    size_t outSize = compressed ? 33 : 65;
-    int len = pubKey.size();
+    size_t outSize = PUBLIC_KEY_SIZE;
     pubKey.resize(outSize);
-    len = pubKey.size();
-
     secp256k1_ec_pubkey_serialize(
             ctx, pubKey.data(), &outSize, &pubkey,
             compressed ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
     pubKey.resize(outSize);
+
     // Succeed.
     return true;
 }
 
-std::tuple<std::vector<uint8_t>, bool> Secp256K1::Sign(
-        const uint8_t *hash) const {
+std::tuple<std::vector<uint8_t>, bool> Secp256K1::Sign(const uint8_t* hash) const
+{
     // Make signature.
     secp256k1_ecdsa_signature sig;
-    int ret = secp256k1_ecdsa_sign(ctx, &sig, hash, privKey.data(),
-                                   secp256k1_nonce_function_rfc6979, nullptr);
+    std::vector<unsigned char> temp = privKey;
+    temp.insert(temp.end(),'\0');
+    int ret = secp256k1_ecdsa_sign(
+            ctx, &sig, hash, temp.data(), secp256k1_nonce_function_rfc6979, nullptr);
     if (ret != 1) {
         // Failed to sign.
         return std::make_tuple(std::vector<uint8_t>(), false);
@@ -171,13 +197,12 @@ std::tuple<std::vector<uint8_t>, bool> Secp256K1::Sign(
  *  strict DER before being passed to this module, and we know it supports all
  *  violations present in the blockchain before that point.
  */
-static int
-ecdsa_signature_parse_der_lax(const secp256k1_context *ctx, secp256k1_ecdsa_signature *sig, const unsigned char *input,
-                              size_t inputlen) {
+static int ecdsa_signature_parse_der_lax(const secp256k1_context* ctx, secp256k1_ecdsa_signature* sig, const unsigned char* input, size_t inputlen)
+{
     size_t rpos, rlen, spos, slen;
     size_t pos = 0;
     size_t lenbyte;
-    unsigned char tmpsig[64] = {0};
+    unsigned char tmpsig[64] = { 0 };
     int overflow = 0;
 
     /* Hack to initialize sig with a correctly-parsed but invalid signature. */
@@ -322,7 +347,8 @@ ecdsa_signature_parse_der_lax(const secp256k1_context *ctx, secp256k1_ecdsa_sign
  * @param pubKey pubKey being used to verify the msg (65 bytes)
  * @return true if success
  */
-bool Secp256K1::Verify(const uint8_t *msgHash, const std::vector<uint8_t> &sign, const std::vector<uint8_t> &pubKey) {
+bool Secp256K1::Verify(const uint8_t* msgHash, const std::vector<uint8_t>& sign, const std::vector<uint8_t>& pubKey)
+{
     if (pubKey.size() != PUBLIC_KEY_SIZE) {
         throw Secp256K1Exception("Invalid public key size");
     }
@@ -330,7 +356,7 @@ bool Secp256K1::Verify(const uint8_t *msgHash, const std::vector<uint8_t> &sign,
         throw Secp256K1Exception("Invalid signature size");
     }
 
-    secp256k1_context *ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
+    secp256k1_context* ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
     // Parse public key.
     secp256k1_pubkey pubkey;
     if (!secp256k1_ec_pubkey_parse(ctx, &pubkey, pubKey.data(),
@@ -350,74 +376,9 @@ bool Secp256K1::Verify(const uint8_t *msgHash, const std::vector<uint8_t> &sign,
     return ret;
 }
 
-std::string Secp256K1::base16Decode(const std::string &input) {
-    const auto len = input.length();
-    if (len & 1) {
-        return "";
-    }
-
-    std::string output;
-    output.reserve(len / 2);
-    for (auto it = input.begin(); it != input.end();) {
-        try {
-            int hi = hexValue(*it++);
-            int lo = hexValue(*it++);
-            output.push_back(hi << 4 | lo);
-        } catch (const std::invalid_argument &e) {
-            throw e;
-        }
-    }
-    return output;
-}
-
-int Secp256K1::hexValue(char hex_digit) {
-    switch (hex_digit) {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            return hex_digit - '0';
-
-        case 'A':
-        case 'B':
-        case 'C':
-        case 'D':
-        case 'E':
-        case 'F':
-            return hex_digit - 'A' + 10;
-
-        case 'a':
-        case 'b':
-        case 'c':
-        case 'd':
-        case 'e':
-        case 'f':
-            return hex_digit - 'a' + 10;
-    }
-    throw std::invalid_argument("bad hex_digit");
-}
-
-std::string Secp256K1::base16Encode(const std::string &input) {
-    static constexpr char hex_digits[] = "0123456789ABCDEF";
-
-    std::string output;
-    output.reserve(input.length() * 2);
-    for (unsigned char c : input) {
-        output.push_back(hex_digits[c >> 4]);
-        output.push_back(hex_digits[c & 15]);
-    }
-    return output;
-}
-
-Secp256K1 *Secp256K1::instance = nullptr;
-
-Secp256K1 *Secp256K1::getInstance() {
+Secp256K1* Secp256K1::instance = nullptr;
+Secp256K1* Secp256K1::getInstance()
+{
     if (instance == nullptr) {
         instance = new Secp256K1;
     }

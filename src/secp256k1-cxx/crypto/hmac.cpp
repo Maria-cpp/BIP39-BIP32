@@ -93,13 +93,13 @@ void hmac_sha256_prepare(const uint8_t *key, const uint32_t keylen, uint32_t *op
 #endif
 		key_pad[i] = data ^ 0x5c5c5c5c;
 	}
-	sha256_Transform(sha256_initial_hash_value, key_pad, opad_digest);
+	sha256_Transform(sha256_initial_hash_value1, key_pad, opad_digest);
 
 	/* convert o_key_pad to i_key_pad and compute its digest */
 	for (int i = 0; i < SHA256_BLOCK_LENGTH/(int)sizeof(uint32_t); i++) {
 		key_pad[i] = key_pad[i] ^ 0x5c5c5c5c ^ 0x36363636;
 	}
-	sha256_Transform(sha256_initial_hash_value, key_pad, ipad_digest);
+	sha256_Transform(sha256_initial_hash_value1, key_pad, ipad_digest);
 	memzero(key_pad, sizeof(key_pad));
 }
 
@@ -168,12 +168,12 @@ void hmac_sha512_prepare(const uint8_t *key, const uint32_t keylen, uint64_t *op
 #endif
 		key_pad[i] = data ^ 0x5c5c5c5c5c5c5c5c;
 	}
-	sha512_Transform(sha512_initial_hash_value, key_pad, opad_digest);
+	sha512_Transform(sha512_initial_hash_value1, key_pad, opad_digest);
 
 	/* convert o_key_pad to i_key_pad and compute its digest */
 	for (int i = 0; i < SHA512_BLOCK_LENGTH/(int)sizeof(uint64_t); i++) {
 		key_pad[i] = key_pad[i] ^ 0x5c5c5c5c5c5c5c5c ^ 0x3636363636363636;
 	}
-	sha512_Transform(sha512_initial_hash_value, key_pad, ipad_digest);
+	sha512_Transform(sha512_initial_hash_value1, key_pad, ipad_digest);
 	memzero(key_pad, sizeof(key_pad));
 }

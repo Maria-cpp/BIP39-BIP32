@@ -1,5 +1,5 @@
 #include "mnemonic.h"
-#include "../crypto/pbkdf2.h"
+#include "../pbkdf2.h"
 #include "utils.h"
 
 #include <cstring>

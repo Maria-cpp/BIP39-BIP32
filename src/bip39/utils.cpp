@@ -39,6 +39,7 @@ bool isHex(const std::string& str)
 
 const char* hex_char_to_bin(char c)
 {
+    // TODO handle default / error
     switch (toupper(c)) {
     case '0':
         return "0000";
@@ -72,8 +73,6 @@ const char* hex_char_to_bin(char c)
         return "1110";
     case 'F':
         return "1111";
-        default:
-            std::cout<<"not a hexadecimal input\n";
     }
 }
 

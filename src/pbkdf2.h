@@ -44,49 +44,49 @@ struct PBKDF2_CTX {
 
 template <typename T, size_t BLOCK_LEN, size_t RAW_BYTES_LEN>
 void pbkdf2_hmac_sha256_Init(
-    PBKDF2_CTX<T, BLOCK_LEN, RAW_BYTES_LEN>* pctx,
-    const uint8_t* pass,
-    int passlen,
-    const uint8_t* salt,
-    int saltlen);
+        PBKDF2_CTX<T, BLOCK_LEN, RAW_BYTES_LEN>* pctx,
+        const uint8_t* pass,
+        int passlen,
+        const uint8_t* salt,
+        int saltlen);
 template <typename T, size_t BLOCK_LEN, size_t RAW_BYTES_LEN>
 void pbkdf2_hmac_sha256_Update(PBKDF2_CTX<T, BLOCK_LEN, RAW_BYTES_LEN>* pctx, uint32_t iterations);
 template <typename T, size_t BLOCK_LEN, size_t RAW_BYTES_LEN>
 void pbkdf2_hmac_sha256_Final(PBKDF2_CTX<T, BLOCK_LEN, RAW_BYTES_LEN>* pctx, uint8_t* key);
 
 void pbkdf2_hmac_sha256(
-    const uint8_t* pass,
-    size_t passlen,
-    const uint8_t* salt,
-    size_t saltlen,
-    uint32_t iterations,
-    uint8_t* key);
+        const uint8_t* pass,
+        size_t passlen,
+        const uint8_t* salt,
+        size_t saltlen,
+        uint32_t iterations,
+        uint8_t* key);
 
 template <typename T, size_t BLOCK_LEN, size_t RAW_BYTES_LEN>
 void pbkdf2_hmac_sha512_Init(
-    PBKDF2_CTX<T, BLOCK_LEN, RAW_BYTES_LEN>* pctx,
-    const uint8_t* pass,
-    int passlen,
-    const uint8_t* salt,
-    int saltlen);
+        PBKDF2_CTX<T, BLOCK_LEN, RAW_BYTES_LEN>* pctx,
+        const uint8_t* pass,
+        int passlen,
+        const uint8_t* salt,
+        int saltlen);
 template <typename T, size_t BLOCK_LEN, size_t RAW_BYTES_LEN>
 void pbkdf2_hmac_sha512_Update(PBKDF2_CTX<T, BLOCK_LEN, RAW_BYTES_LEN>* pctx, uint32_t iterations);
 template <typename T, size_t BLOCK_LEN, size_t RAW_BYTES_LEN>
 void pbkdf2_hmac_sha512_Final(PBKDF2_CTX<T, BLOCK_LEN, RAW_BYTES_LEN>* pctx, uint8_t* key);
 
 void pbkdf2_hmac_sha512(
-    const uint8_t* pass,
-    size_t passlen,
-    const uint8_t* salt,
-    size_t saltlen,
-    uint32_t iterations,
-    uint8_t* key);
+        const uint8_t* pass,
+        size_t passlen,
+        const uint8_t* salt,
+        size_t saltlen,
+        uint32_t iterations,
+        uint8_t* key);
 
 enum class Algo : unsigned char { SHA256, SHA512 };
 
 template <typename T>
 std::vector<uint8_t> hashPbkdf2(
-    Algo algo, const T& pass, const T& salt, uint32_t iterations, size_t outKeySize)
+        Algo algo, const T& pass, const T& salt, uint32_t iterations, size_t outKeySize)
 {
     using PassType = typename std::decay<decltype(*pass.begin())>::type;
     using SaltType = typename std::decay<decltype(*salt.begin())>::type;
@@ -99,20 +99,20 @@ std::vector<uint8_t> hashPbkdf2(
 
     std::vector<uint8_t> outKey(outKeySize);
     switch (algo) {
-    case Algo::SHA256:
-        pbkdf2_hmac_sha256(
-            pass.data(), pass.size(), salt.data(), salt.size(), iterations, &outKey[0]);
-        break;
-    case Algo::SHA512:
-        pbkdf2_hmac_sha512(
-            pass.data(), pass.size(), salt.data(), salt.size(), iterations, &outKey[0]);
-        break;
+        case Algo::SHA256:
+            pbkdf2_hmac_sha256(
+                    pass.data(), pass.size(), salt.data(), salt.size(), iterations, &outKey[0]);
+            break;
+        case Algo::SHA512:
+            pbkdf2_hmac_sha512(
+                    pass.data(), pass.size(), salt.data(), salt.size(), iterations, &outKey[0]);
+            break;
     }
     return outKey;
 }
 
 template <>
 std::vector<uint8_t> hashPbkdf2<std::string>(
-    Algo algo, const std::string& pass, const std::string& salt, uint32_t iterations, size_t outKeySize);
+        Algo algo, const std::string& pass, const std::string& salt, uint32_t iterations, size_t outKeySize);
 
 #endif // PBKDF2_H

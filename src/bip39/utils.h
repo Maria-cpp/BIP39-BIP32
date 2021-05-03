@@ -5,7 +5,6 @@
 #include <sstream>
 #include <string>
 
-
 namespace BIP39_Utils
 {
 bool isHex(const std::string& str);

@@ -33,10 +33,11 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include "secp256k1-cxx/crypto/sha2.hpp"
 
-static constexpr size_t SHA512_BLOCK_LENGTH = 128;
+//static constexpr size_t SHA512_BLOCK_LENGTH = 128;
 static constexpr size_t SHA512_RAW_BYTES_LENGTH = 64;
-static constexpr size_t SHA512_DIGEST_STRING_LENGTH = SHA512_RAW_BYTES_LENGTH * 2 + 1;
+//static constexpr size_t SHA512_DIGEST_STRING_LENGTH = SHA512_RAW_BYTES_LENGTH * 2 + 1;*/
 
 struct SHA512_CTX {
     std::array<uint64_t, 8> state = {0};

@@ -28,9 +28,7 @@ typedef signed long ssize_t;
 #include "base58.h"
 
 #include "memzero.h"
-#include "ripemd160.h"
 #include "sha2.hpp"
-
 #include <algorithm>
 #include <array>
 #include <cstring>
