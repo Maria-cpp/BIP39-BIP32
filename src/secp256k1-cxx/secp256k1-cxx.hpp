@@ -1,7 +1,7 @@
 #ifndef SECP256K1_CPP_H
 #define SECP256K1_CPP_H
 
-#include "../ripemd160.h"
+#include "crypto/ripemd160.h"
 #include "../bip39/utils.h"
 #include "crypto/sha2.hpp"
 #include "libsecp256k1/include/secp256k1.h"

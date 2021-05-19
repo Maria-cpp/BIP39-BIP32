@@ -29,7 +29,7 @@ typedef signed long ssize_t;
 
 #include "secp256k1-cxx/crypto/sha2.hpp"
 #include "secp256k1-cxx/crypto/memzero.h"
-#include "ripemd160.h"
+#include "secp256k1-cxx/crypto/ripemd160.h"
 
 #include <algorithm>
 #include <array>

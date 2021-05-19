@@ -6,7 +6,7 @@
 #include "../base58.h"
 #include "../bip39/utils.h"
 #include "../hmac.h"
-#include "../ripemd160.h"
+#include "../secp256k1-cxx/crypto/ripemd160.h"
 #include <array>
 #include <assert.h>
 #include <iostream>

@@ -12,8 +12,6 @@ add_library(crypto STATIC
         sha384.cpp
         sha512.h
         sha512.cpp
-        ripemd160.h
-        ripemd160.cpp
         hmac.h
         hmac.cpp
         pbkdf2.h
@@ -23,6 +21,8 @@ add_library(crypto STATIC
         md5.h
         md5.cpp
         sha1.h
+        secp256k1-cxx/crypto/ripemd160.h
+        secp256k1-cxx/crypto/ripemd160.cpp
         )
 target_link_libraries(crypto secpcrypto)
 add_library(bip39-cxx STATIC bip39/mnemonic.cpp bip39/wordlist.cpp bip39/utils.h bip39/utils.cpp bip39/BIP39.h bip39/BIP39.cpp)
