@@ -108,8 +108,6 @@ std::string BIP32::signatureBIP32(std::vector<unsigned char> txHash)
     std::cout<<"\n signature as Hex : "<<hexsign<<"\t length " << hexsign.length()<<"\n";
 
     std::vector<uint8_t> msignature = std::get<0>(signTuple);
-    while(msignature.size()!=72)
-        msignature.insert(msignature.end(), '\0');
     if(Secp256K1::getInstance()->Verify(ptr, msignature, getuncompressedPubkey()))
         std::cout<<"\nsignature verified";
     else
