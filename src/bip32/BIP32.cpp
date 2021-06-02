@@ -100,7 +100,11 @@ ExtendedKey BIP32::getMaster()
 }
 std::string BIP32::signatureBIP32(std::vector<unsigned char> txHash)
 {
+    std::cout<<"\n"<<txHash.data()<<"\n";
+    txHash= sha256(txHash);
+    std::cout<<txHash.data()<<"\n";
     std::uint8_t* ptr = txHash.data();
+
     std::tuple<std::vector<uint8_t>, bool> signTuple= Secp256K1::getInstance()->Sign(ptr);
     std::string sign{std::get<0>(signTuple).begin(), std::get<0>(signTuple).end()};
     std::cout<<"\n signature as raw : "<<sign<<"\t length " << sign.length()<<"\n";

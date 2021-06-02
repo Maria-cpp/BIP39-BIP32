@@ -176,7 +176,7 @@ std::tuple<std::vector<uint8_t>, bool> Secp256K1::Sign(const uint8_t *hash) cons
      return std::make_tuple(sigOut, true);*/
 
     // Make signature.
-    /* secp256k1_ecdsa_signature sig;
+     secp256k1_ecdsa_signature sig;
      std::vector<unsigned char> temp = privKey;
 
  //   temp.insert(temp.end(), '\0');
@@ -207,12 +207,12 @@ std::tuple<std::vector<uint8_t>, bool> Secp256K1::Sign(const uint8_t *hash) cons
 
      std::cout << "Signature recoverable 65 bytes: "
                << BIP39_Utils::base16Encode(std::string{compactSig.begin(), compactSig.end()}) << " size "
-               << compactSig.size() << std::endl;*/
+               << compactSig.size() << std::endl;
 
-    secp256k1_ecdsa_recoverable_signature sigRecover;
+    /*secp256k1_ecdsa_recoverable_signature sigRecover;
     std::string sig = BIP39_Utils::base16Decode(
             "0be2158b2a600b05646c2dfeaa93c3e2909c3eb7b0accbe99218e049e5852672418b18f162657b67a20ce5955fe94c2841f3bad9d740844c4cb5f2ed2cb26d7901");
-    std::copy(sig.begin(), sig.end(), sigRecover.data);
+    std::copy(sig.begin(), sig.end(), sigRecover.data);*/
 
     secp256k1_pubkey pubkey;
     if (!secp256k1_ec_pubkey_parse(ctx, &pubkey, pubKey.data(),pubKey.size()))
@@ -229,8 +229,6 @@ std::tuple<std::vector<uint8_t>, bool> Secp256K1::Sign(const uint8_t *hash) cons
     std::vector<uint8_t> Cpubkey = uncompress(pubKey);
     std::cout << "\nPublicKey: " << BIP39_Utils::base16Encode(std::string{Cpubkey.begin(), Cpubkey.end()})
               << " size " << Rpubkey.size() << std::endl;
-    std::vector<uint8_t> compactSig{sig.begin(), sig.end()};
-
     return std::make_tuple(compactSig, true);
 }
 
