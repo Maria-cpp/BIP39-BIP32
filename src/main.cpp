@@ -24,13 +24,17 @@ int main()
    std::cout << "\n";
    std::vector<uint8_t> pubkey =obj.getPublicKey();
 
-   std::cout << "public Key : ";
+   std::cout << "public Key compressed : ";
    for (const auto &itr : BIP39_Utils::base16Encode({ pubkey.begin(), pubkey.end()})) {
       std::cout << itr;
    }
    std::cout << "\n";
 
-   //** Signature *//*
+   std::vector<uint8_t> uncompressed = obj.getuncompressedPubkey();
+    std::string str{uncompressed.begin(),uncompressed.end()};
+    std::cout << "public Key uncompressed : "<<BIP39_Utils::base16Encode(str);
+
+    //** Signature *//*
    std::vector<unsigned char> msg={'a', 'b', 'c', '\0'};
    std::string sign=obj.signatureBIP32(msg);
 

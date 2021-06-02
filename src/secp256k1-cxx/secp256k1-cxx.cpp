@@ -233,7 +233,7 @@ std::tuple<std::vector<uint8_t>, bool> Secp256K1::Sign(const uint8_t* hash) cons
     std::cout << "PublicKey: " << BIP39_Utils::base16Encode(std::string{Cpubkey.begin(), Cpubkey.end()})
               << " size " << Rpubkey.size() << std::endl;
 
-    return std::make_tuple(sigOut, true);
+    return std::make_tuple(compactSig, true);
 }
 
 /** This function is taken from the libsecp256k1 distribution and implements
