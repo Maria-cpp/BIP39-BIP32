@@ -6,10 +6,10 @@
 int main()
 {
    BIP32 obj;
-   std::cout<<"\n\t\tseed\n";
+   /*std::cout<<"\n\t\tseed\n";
    std::string entropy="063679ca1b28b5cfda9c186b367e271e";
-   obj.generateSeed(entropy);
-   std::cout<<"\n\n\t\tKeys\n";
+   std::cout<<"Seed: "<<obj.generateSeed(entropy);
+   std::cout<<"\n\n\t\tKeys\n";*/
    obj.generatekeys();
 
 

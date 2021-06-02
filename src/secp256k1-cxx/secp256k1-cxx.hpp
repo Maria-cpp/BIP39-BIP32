@@ -5,6 +5,7 @@
 #include "../bip39/utils.h"
 #include "crypto/sha2.hpp"
 #include "libsecp256k1/include/secp256k1.h"
+#include "libsecp256k1/src/util.h"
 #include <stdexcept>
 #include <stdint.h>
 #include <vector>
@@ -42,6 +43,10 @@ public:
 
     static Secp256K1* getInstance();
     std::vector<uint8_t> pubKey;
+    std::vector<uint8_t> unComppubKey;
+
+    const std::vector<uint8_t> &getUnComppubKey() const;
+
     void setPrivKey(const std::vector<uint8_t>& privKey);
 
 private:

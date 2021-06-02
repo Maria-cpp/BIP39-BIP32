@@ -6,6 +6,7 @@
 #include <random>
 #include <tuple>
 #include <vector>
+#include <secp256k1_recovery.h>
 
 /**
  * @brief Secp256K1::Secp256K1
@@ -95,6 +96,7 @@ std::vector<uint8_t> Secp256K1::uncompressedPublicKey()
     std::vector<uint8_t> pub(65);
     size_t publen = 65;
     secp256k1_ec_pubkey_serialize(ctx, &pub[0], &publen, &pubkey, SECP256K1_EC_UNCOMPRESSED);
+    unComppubKey=pub;
     return pub;
 }
 
@@ -161,7 +163,7 @@ bool Secp256K1::createPublicKey(bool compressed)
 
 std::tuple<std::vector<uint8_t>, bool> Secp256K1::Sign(const uint8_t* hash) const
 {
-    // Make signature.
+   /* // Make signature.
     secp256k1_ecdsa_signature sig;
     std::vector<unsigned char> temp = privKey;
     temp.insert(temp.end(),'\0');
@@ -184,6 +186,53 @@ std::tuple<std::vector<uint8_t>, bool> Secp256K1::Sign(const uint8_t* hash) cons
 
     // Returns
     sigOut.resize(sigOutSize);
+    return std::make_tuple(sigOut, true);*/
+
+    // Make signature.
+    secp256k1_ecdsa_signature sig;
+    std::vector<unsigned char> temp = privKey;
+
+//   temp.insert(temp.end(), '\0');
+    int ret = secp256k1_ecdsa_sign(
+            ctx, &sig, hash, temp.data(), secp256k1_nonce_function_rfc6979, nullptr);
+
+    if (ret != 1) {
+        // Failed to sign.
+        return std::make_tuple(std::vector<uint8_t>(), false);
+    }
+    std::vector<uint8_t> sigOut{sig.data, sig.data + 64};
+    std::cout << " Simple Signature " << BIP39_Utils::base16Encode(std::string{sigOut.begin(), sigOut.end()})
+              << " size " << sigOut.size() << std::endl;
+
+
+    secp256k1_ecdsa_recoverable_signature sigRecover;
+    const unsigned char* seckey = &privKey[0];
+    unsigned char arr[32] = {};
+    ret = secp256k1_ecdsa_sign_recoverable(
+            ctx, &sigRecover, hash, seckey, secp256k1_nonce_function_rfc6979, NULL);
+    if (ret != 1) {
+        std::cout << "\nthe nonce generation function failed, or the private key was invalid. \n";
+        // Failed to serialize.
+        return std::make_tuple(std::vector<uint8_t>(), false);
+    }
+
+    std::vector<uint8_t> compactSig{sigRecover.data, sigRecover.data + 65};
+
+    std::cout << "Signature recoverable 65 bytes: "
+              << BIP39_Utils::base16Encode(std::string{compactSig.begin(), compactSig.end()}) << " size "
+              << compactSig.size() << std::endl;
+    secp256k1_pubkey pubkey;
+
+    secp256k1_ecdsa_recover(ctx, &pubkey, &sigRecover, hash);
+
+    std::vector<uint8_t> Rpubkey{pubkey.data, pubkey.data+64};
+    std::cout << "PublicKey recoverable 64 bytes: "
+              << BIP39_Utils::base16Encode(std::string{Rpubkey.begin(), Rpubkey.end()}) << " size "
+              << Rpubkey.size() << std::endl;
+    std::vector<uint8_t> Cpubkey=uncompress(pubKey);
+    std::cout << "PublicKey: " << BIP39_Utils::base16Encode(std::string{Cpubkey.begin(), Cpubkey.end()})
+              << " size " << Rpubkey.size() << std::endl;
+
     return std::make_tuple(sigOut, true);
 }
 
@@ -352,9 +401,9 @@ bool Secp256K1::Verify(const uint8_t* msgHash, const std::vector<uint8_t>& sign,
     if (pubKey.size() != PUBLIC_KEY_SIZE) {
         throw Secp256K1Exception("Invalid public key size");
     }
-    if (sign.size() != 72) {
+   /* if (sign.size() != 72) {
         throw Secp256K1Exception("Invalid signature size");
-    }
+    }*/
 
     secp256k1_context* ctx = secp256k1_context_create(SECP256K1_CONTEXT_VERIFY);
     // Parse public key.
@@ -371,6 +420,7 @@ bool Secp256K1::Verify(const uint8_t* msgHash, const std::vector<uint8_t>& sign,
     }
 
     secp256k1_ecdsa_signature_normalize(ctx, &sig, &sig);
+    CHECK(secp256k1_ecdsa_verify(ctx, &sig, msgHash, &pubkey));
     bool ret = secp256k1_ecdsa_verify(ctx, &sig, msgHash, &pubkey);
     secp256k1_context_destroy(ctx);
     return ret;
@@ -387,4 +437,8 @@ Secp256K1* Secp256K1::getInstance()
 
 void Secp256K1::setPrivKey(const std::vector<uint8_t> &privKey) {
     Secp256K1::privKey = privKey;
+}
+
+const std::vector<uint8_t> &Secp256K1::getUnComppubKey() const {
+    return unComppubKey;
 }
